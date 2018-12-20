@@ -225,6 +225,15 @@ if [ -z ${TEST_DIR+x} ]; then
     error_message "ERROR: Output directory not defined!"
 fi
 
+#############################################################
+### Check is we are running the test are root when needed ###
+#############################################################
+
+# -r|ro and -f|--flush need root access
+if ( [ ! -z ${FLUSH_CACHE+x} ] || [ ! -z ${READ_ONLY+x} ] ) && [ $(whoami) != "root" ]; then
+    error_message "ERROR: Root access is need"
+fi
+
 ##########################################################
 ### Check results path and generate results file names ###
 ##########################################################

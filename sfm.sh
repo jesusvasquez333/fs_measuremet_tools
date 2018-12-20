@@ -91,8 +91,8 @@ eng_value() {
     local MAX_I=3
 
     # Get the index for the input value.
-    # It is calculated from how many block of 3 digits the value has.
-    local I=$((${#1}/3))
+    # It is calculated from how many blocks of 3 digits the value's (number of digits - 1) has.
+    local I=$(( ( ${#1} - 1 ) / 3 ))
 
     # Limit the index to the maximum allowed value
     if [ $I -gt $MAX_I ]; then

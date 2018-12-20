@@ -355,6 +355,10 @@ R_RAW_OUTPUT[0]=${W_RAW_OUTPUT[0]}
 
 # Run the test the numbers time specified by the user
 for i in `seq $N`; do
+
+    # Clean up before start
+    clean_up
+
     ######################################
     ### Measure write operation rates ###
     ######################################

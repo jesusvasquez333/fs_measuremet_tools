@@ -57,7 +57,7 @@ usage() {
     echo " - A log file is written to '$LOG_FILE_NAME'"
     echo "The location of of the output files can be specified by the user."
     echo
-    echo "usage: $THIS_SCRIPT_NAME -i|--iterations iterations -s|--size[k,M,G] file_size -d|--dir directory [-n|--no-cache] [-f|--flush-cache] [-c|--clean] [-h|--help]"
+    echo "usage: $THIS_SCRIPT_NAME -i|--iterations iterations -s|--size[k,M,G] file_size -d|--dir directory [-n|--no-cache] [-f|--flush-cache] [-c|--clean] [-r|--ro][-h|--help]"
     echo "    -i|--iterations iterations : Number of times the file will be written and read back."
     echo "    -s|--size file_size[k,G,B] : Size of the file. Units identifiers ('k'=kilo, 'M'=Mega, 'G'=Giga) can be used; if omitted, 'k' is assumed."
     echo "                                 There must not be white spaces between the size and the units. A valid example will be: 2G."
@@ -66,6 +66,8 @@ usage() {
     echo "    -f|--flush                 : Flush the local cache before each R/W operation by performing 'echo 3 > /proc/sys/vm/drop_caches'"
     echo "                                 The test needs to be runt as root with this option."
     echo "    -c|--clean                 : Delete the test file before each iteration. If not specified the test file will not be deleted before a new iteration."
+    echo "    -r|--ro                    : Only perform read operations: in this mode the test file will be written once and the local cache will be flushed (like using the -f option)."
+    echo "                                 Them each iteration will only perform read operations. The test needs to be runt as root with this option."
     echo "    -o|--out-dir               : Directory to save the results. If not specified the current directory will be used."
     echo "    -h|--help                  : show this message."
     echo
@@ -184,6 +186,11 @@ case $key in
 
     -c|--clean)
     DELETE_TEST_FILE="YES"
+    shift
+    ;;
+
+    -r|--ro)
+    READ_ONLY="YES"
     shift
     ;;
 
@@ -371,48 +378,60 @@ for i in `seq $N`; do
     ### Measure write operation rates ###
     ######################################
 
-    # Flush cache, if needed
-    flush_cache
+    # Check if the write operation is enabled.
+    # It will be disable after the first write is read-only mode is enabled.
+    if [ -z ${DO_NOT_WRITE+x} ]; then
+        DO_NOT_WRITE="YES"
 
-    # Get the free RAM before 'dd'
-    W_RAM_BEFORE=$(get_free_mem)
+        # Flush cache, if needed
+        flush_cache
 
-    # Execute the 'dd' command
-    W=$(dd if=/dev/zero of=$TEST_FILE bs=$BYTES count=$COUNT $DD_W_ARGS 2>&1)
+        # Get the free RAM before 'dd'
+        W_RAM_BEFORE=$(get_free_mem)
 
-    # Get the free RAM after 'dd'
-    W_RAM_AFTER=$(get_free_mem)
+        # Execute the 'dd' command
+        W=$(dd if=/dev/zero of=$TEST_FILE bs=$BYTES count=$COUNT $DD_W_ARGS 2>&1)
 
-    # Extarct rate value and units from the output of 'dd'
-    W_RATE=$(echo "$W" | tail -n1 | awk '{print $(NF-1)}')
-    W_RATE_UNITS=$(echo "$W" | tail -n1 | awk '{print $(NF)}')
+        # Get the free RAM after 'dd'
+        W_RAM_AFTER=$(get_free_mem)
 
-    # Save the raw information
-    #W_RAW_OUTPUT[i]="$RAM_BEFORE $RAM_AFTER $RATE $RATE_UNITS"
-    W_RAW_OUTPUT[i]=$(printf "%9s %2s%9s%3s%9s %3s" $W_RAM_BEFORE $W_RAM_AFTER $W_RATE $W_RATE_UNITS)
+        # Extarct rate value and units from the output of 'dd'
+        W_RATE=$(echo "$W" | tail -n1 | awk '{print $(NF-1)}')
+        W_RATE_UNITS=$(echo "$W" | tail -n1 | awk '{print $(NF)}')
 
-    # Adjust the rate to be expressed in MB/s
-    case $RATE_UNITS in
-        "kB/s"|"")
-        RATE=$(echo "$RATE" | sed -E 's/([0-9]+)\.([0-9])/0.0\1\2/g')
-        ;;
+        # Save the raw information
+        #W_RAW_OUTPUT[i]="$RAM_BEFORE $RAM_AFTER $RATE $RATE_UNITS"
+        W_RAW_OUTPUT[i]=$(printf "%9s %2s%9s%3s%9s %3s" $W_RAM_BEFORE $W_RAM_AFTER $W_RATE $W_RATE_UNITS)
 
-        "MB/s")
-        # This is the default, do not modified the value
-        ;;
+        # Adjust the rate to be expressed in MB/s
+        case $RATE_UNITS in
+            "kB/s"|"")
+            RATE=$(echo "$RATE" | sed -E 's/([0-9]+)\.([0-9])/0.0\1\2/g')
+            ;;
 
-        "GB/s")
-        RATE=$(echo "$RATE" | sed -E 's/([0-9]+)\.([0-9])/\1\200/g')
-        ;;
+            "MB/s")
+            # This is the default, do not modified the value
+            ;;
 
-        *)
-        # Not supported unit identifier found.
-        #Use '-1' as process rate value and continue
-        RATE="-1"
-    esac
+            "GB/s")
+            RATE=$(echo "$RATE" | sed -E 's/([0-9]+)\.([0-9])/\1\200/g')
+            ;;
 
-    # Save the processed data
-    W_RESULTS[i-1]="$W_RATE"
+            *)
+            # Not supported unit identifier found.
+            #Use '-1' as process rate value and continue
+            RATE="-1"
+        esac
+
+        # Save the processed data
+        W_RESULTS[i-1]="$W_RATE"
+
+        # If we are running in read-only mode, flush the cache and set the flag here to stop further write operations
+        if [ ! -z ${READ_ONLY+x} ]; then
+            flush_cache
+            DO_NOT_WRITE="YES"
+        fi
+    fi
 
     ####################################
     ### Measure read operation rates ###

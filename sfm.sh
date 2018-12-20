@@ -57,7 +57,7 @@ usage() {
     echo " - A log file is written to '$LOG_FILE_NAME'"
     echo "The location of of the output files can be specified by the user."
     echo
-    echo "usage: $THIS_SCRIPT_NAME -i|--iterations iterations -s|--size[k,M,G] file_size -d|--dir directory [-n|--no-cache] [-f|--flush-cache] [-h|--help]"
+    echo "usage: $THIS_SCRIPT_NAME -i|--iterations iterations -s|--size[k,M,G] file_size -d|--dir directory [-n|--no-cache] [-f|--flush-cache] [-c|--clean] [-h|--help]"
     echo "    -i|--iterations iterations : Number of times the file will be written and read back."
     echo "    -s|--size file_size[k,G,B] : Size of the file. Units identifiers ('k'=kilo, 'M'=Mega, 'G'=Giga) can be used; if omitted, 'k' is assumed."
     echo "                                 There must not be white spaces between the size and the units. A valid example will be: 2G."
@@ -65,6 +65,7 @@ usage() {
     echo "    -n|--no-cache              : Disable cache in R/W operations by using dd's iflag/oflag=direct."
     echo "    -f|--flush                 : Flush the local cache before each R/W operation by performing 'echo 3 > /proc/sys/vm/drop_caches'"
     echo "                                 The test needs to be runt as root with this option."
+    echo "    -c|--clean                 : Delete the test file before each iteration. If not specified the test file will not be deleted before a new iteration."
     echo "    -o|--out-dir               : Directory to save the results. If not specified the current directory will be used."
     echo "    -h|--help                  : show this message."
     echo
@@ -178,6 +179,11 @@ case $key in
 
     -f|--flush)
     FLUSH_CACHE="YES"
+    shift
+    ;;
+
+    -c|--clean)
+    DELETE_TEST_FILE="YES"
     shift
     ;;
 
@@ -357,7 +363,9 @@ R_RAW_OUTPUT[0]=${W_RAW_OUTPUT[0]}
 for i in `seq $N`; do
 
     # Clean up before start
-    clean_up
+    if [ ! -z ${DELETE_TEST_FILE+x} ]; then
+        clean_up
+    fi
 
     ######################################
     ### Measure write operation rates ###

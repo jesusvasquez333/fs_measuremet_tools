@@ -390,7 +390,6 @@ for i in `seq $N`; do
     # Check if the write operation is enabled.
     # It will be disable after the first write is read-only mode is enabled.
     if [ -z ${DO_NOT_WRITE+x} ]; then
-        DO_NOT_WRITE="YES"
 
         # Flush cache, if needed
         flush_cache

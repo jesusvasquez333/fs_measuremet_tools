@@ -302,7 +302,7 @@ else
     echo "Write results: "
     echo "==================================="
     echo "Test directory  : ${TEST_DIR}"
-    echo "Number of files : ${SIZE}"
-    echo "Size of files   : ${N}"
+    echo "Number of files : ${N}"
+    echo "Size of files   : ${SIZE}"
     echo "==================================="
 fi

@@ -11,6 +11,7 @@ The following tools are available:
 Tool      | Description
 ----------|--------------
 sfm.sh    | Measure single file R/W operation rates
+mfm.sh    | Measure multiple files R operation rates
 
 ### sfm.sh
 
@@ -37,4 +38,26 @@ usage: ./sfm.sh -i|--iterations iterations -s|--size[k,M,G] file_size -d|--dir d
                                  The test needs to be runt as root with this option.
     -o|--out-dir               : Directory to save the results. If not specified the current directory will be used.
     -h|--help                  : show this message.
+```
+
+### mfm.sh
+
+Utility to measure the average disk's transfer rate while reading multiple files.
+
+First, use this utility in write mode. It will create the test files in the specified path. The number of file and their size will be specified by the user.
+
+After the files are created, the utility can be used in read mode (default). It will find and read all test files in the specified path measuring the total size and elapse time.
+
+The test files are not automatically deleted after reading them, so that the test can be run multiple times if desired. The -c|--clean operation can be used to manually delete all the test files from an specified directory.
+
+The final results are printed on screen at the end of the test.
+
+```{r, engine='bash', usage}
+usage: $THIS_SCRIPT_NAME -d|--dir directory [-w|--write -n|--num number_files -s|--size[k,M,G] file_size] [-c|--clean] [-h|--help]"
+    -d|--dir directory         : Directory where the files will be read from."
+    -w|--write                 : Set 'write mode'. If this option is omitted, 'read mode' is used by default."
+    -n|--num number_files      : Number of files to be written (used in 'write mode')"
+    -s|--size file_size[k,G,B] : Size of the files (used in 'write mode'). Units identifiers ('k'=kilo, 'M'=Mega, 'G'=Giga) can be used; if omitted, 'k' is assumed."
+    -c|--clean                 : Delete the test files from the specified location."
+    -h|--help                  : Show this message."
 ```

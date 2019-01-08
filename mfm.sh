@@ -303,6 +303,6 @@ else
     echo "==================================="
     echo "Test directory  : ${TEST_DIR}"
     echo "Number of files : ${N}"
-    echo "Size of files   : ${SIZE}"
+    echo "Size of files   : $(eng_value ${SIZE})"
     echo "==================================="
 fi

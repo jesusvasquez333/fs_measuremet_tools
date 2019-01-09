@@ -288,7 +288,7 @@ if [ -z ${WRITE_MODE+x} ]; then
     echo "Number of files found : ${R_NUM}"
     echo "Total size transfered : $(eng_value ${R_SIZE})"
     echo "Total time elapse     : ${R_TIME} s"
-    echo "Average total rate    : $(eng_value ${R_RATE})"
+    echo "Average total rate    : $(eng_value ${R_RATE})/s"
     echo "==================================="
 else
     echo "Writting files...."
